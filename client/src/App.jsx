@@ -5,6 +5,7 @@ import {useSocket} from "./hooks/useSocket.js";
 import {closeSocket} from "./services/socket.js";
 import {loginUser, registerUser} from "./services/api.js";
 import Register from "./components/Register.jsx";
+import toast from "react-hot-toast";
 
 
 const App = () => {
@@ -31,6 +32,7 @@ const App = () => {
         try {
             const { token, user } = await loginUser(email, password);
             localStorage.setItem('token', token);
+            toast.success("User login successfully");
             setLoginResponse({token, user})
             setIsLoggedIn(true);
         } catch (err) {
@@ -46,6 +48,7 @@ const App = () => {
         try {
             await registerUser(body);
             setIsRegistering(false);
+            toast.success('User registered successfully.');
         } catch (err) {
             setError(err.message || 'An error occurred during login');
         } finally {

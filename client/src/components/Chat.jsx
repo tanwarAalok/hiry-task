@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
     ArrowLeftIcon,
-    LogoutIcon,
+    LogoutIcon, MenuIcon,
     PaperAirplaneIcon,
     PaperClipIcon,
     SearchIcon,
@@ -18,6 +18,7 @@ import {
 import useScroll from "../hooks/useScroll.js";
 import {getTimePassed, getFirstName, checkOnline} from "../../utils.js";
 import DropDownMenu from "./DropDownMenu.jsx";
+import toast from "react-hot-toast";
 
 
 const Chat = ({socket, user, onlineUsers, onLogout}) => {
@@ -36,6 +37,7 @@ const Chat = ({socket, user, onlineUsers, onLogout}) => {
     const [previewURL, setPreviewURL] = useState(null);
     const fileInputRef = useRef(null);
     const [loadingFile, setLoadingFile] = useState(false)
+    const [activeView, setActiveView] = useState('sidebar');
 
     const chatContainerRef = useScroll(chat);
 
@@ -94,6 +96,9 @@ const Chat = ({socket, user, onlineUsers, onLogout}) => {
                     const isBlocked = blockedUsers.some(blockedUser => blockedUser.id === new_message.senderId);
                     if(!isBlocked) setChat([...chat, new_message])
                 }
+                else {
+                    toast.success("New Message")
+                }
                 await fetchContacts()
             });
 
@@ -115,8 +120,9 @@ const Chat = ({socket, user, onlineUsers, onLogout}) => {
     }, [socket, chat]);
 
     const handleSelectedChat = async (contact) => {
-        setSelectedChat(contact)
         try{
+            setSelectedChat(contact)
+            setActiveView('chat')
             const data = await getMessages(contact.id);
             setChat(data)
 
@@ -202,7 +208,7 @@ const Chat = ({socket, user, onlineUsers, onLogout}) => {
     return (
         <div className="flex h-screen bg-white">
             {/* Sidebar */}
-            <div className="w-1/3 flex flex-col">
+            <div className={`w-full md:w-1/3 flex flex-col ${activeView === 'sidebar' ? 'block' : 'hidden md:block'}`}>
                 <div className="p-4 border-b h-20 flex justify-between items-center">
                     <div className="relative flex-1">
                         <SearchIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400"/>
@@ -329,13 +335,19 @@ const Chat = ({socket, user, onlineUsers, onLogout}) => {
             </div>
 
             {/* Chat window */}
-            <div className="flex-1 flex flex-col border-l">
+            <div className={`flex-1 flex flex-col border-l ${activeView === 'chat' ? 'block' : 'hidden md:block'}`}>
                 {!selectedChat ? (
                     <img src="/chat-bg.jpg" alt="chat" className="w-full h-full"/>
                 ) : (
                     <>
                         <div className="bg-gray-100 p-4 flex items-center justify-between border-b h-20">
                             <div className="flex items-center">
+                                <button
+                                    className="mr-2 md:hidden"
+                                    onClick={() => setActiveView('sidebar')}
+                                >
+                                    <MenuIcon className="h-6 w-6"/>
+                                </button>
                                 <img src={selectedChat.image} alt={selectedChat.name}
                                      className="w-10 h-10 rounded-full mr-3"/>
                                 <div>
@@ -352,7 +364,8 @@ const Chat = ({socket, user, onlineUsers, onLogout}) => {
 
                                 </div>
                             </div>
-                            <DropDownMenu contact={selectedChat} onBlock={handleBlockUser} onArchive={handleArchiveUser}/>
+                            <DropDownMenu contact={selectedChat} onBlock={handleBlockUser}
+                                          onArchive={handleArchiveUser}/>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 bg-white" ref={chatContainerRef}>
